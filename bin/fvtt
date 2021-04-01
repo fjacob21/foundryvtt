@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+import argparse
+import datetime
+import os
+import sys
+from foundryvtt import Foundry, FoundryRepo
+
+
+def get_foundry(path):
+    if path:
+        return Foundry.Load(path)
+    repo = FoundryRepo()
+    return repo.main
+    
+def main(args):
+    if args.cmd == "backup":
+        backup(args)
+    elif args.cmd == "cloud":
+        cloud(args)
+
+def cloud(args):
+    if args.cloud_cmd == "sync":
+        os.system("onedrive --synchronize")
+
+def backup(args):
+    if args.backup_cmd == "list":
+        backup_list(args)
+    elif args.backup_cmd == "world":
+        backup_world(args)
+    elif args.backup_cmd == "full":
+        backup_full(args)
+
+def backup_list(args):
+    foundry = get_foundry(args.path)
+    worlds, fulls = foundry.backup_manager.get_backups()
+    print("Full backups:")
+    for b in fulls:
+        print(f"\t{b}")
+    print("World backups:")
+    for b in worlds:
+        print(f"\t{b}")
+
+def backup_world(args):
+    foundry = get_foundry(args.path)
+    instance = foundry.get_instance(args.instance)
+    instance.world_backup()
+
+def backup_full(args):
+    foundry = get_foundry(args.path)
+    instance = foundry.get_instance(args.instance)
+    instance.full_backup()
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Manage foundryvtt service")
+    parser.add_argument("-p", "--path", metavar="path", default= "", nargs="?",
+                        help="The source path for FoundryVTT data")
+    subparsers = parser.add_subparsers(help='Command to execute', dest='cmd')
+
+    # Create the parser for the "backup" command
+    parser_backup = subparsers.add_parser('backup', help='Backup help')
+    backup_subparsers = parser_backup.add_subparsers(help='Backup command to execute', dest='backup_cmd')
+    backup_subparsers.add_parser('list', help='List all backup')
+    backup_world_parser = backup_subparsers.add_parser('world', help='Create world backup')
+    backup_world_parser.add_argument("-i", "--instance", metavar="instance", default= "prod", nargs="?",
+                        help="Which instance to backup")
+    backup_full_parser = backup_subparsers.add_parser('full', help='Create full backup')
+    backup_full_parser.add_argument("-i", "--instance", metavar="instance", default= "prod", nargs="?",
+                        help="Which instance to backup")
+    
+    # Create the parser for the "cloud" command
+    parser_cloud = subparsers.add_parser('cloud', help='CLoud help')
+    cloud_subparsers = parser_cloud.add_subparsers(help='Cloud command to execute', dest='cloud_cmd')
+    cloud_subparsers.add_parser('sync', help='List all backup')
+
+
+    args = parser.parse_args()
+    main(args)
