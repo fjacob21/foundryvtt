@@ -5,7 +5,7 @@ import re
 
 class Backup(object):
 
-    def __init__(self, path, file, date):
+    def __init__(self, path: str, file: str, date: str):
         self._path = path
         self._file = file
         self._full_path = os.path.join(self._path, self._file)
