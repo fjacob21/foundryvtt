@@ -5,8 +5,13 @@ import os
 import sys
 from foundryvtt import Foundry, FoundryRepo
 
+def check_positive(value):
+    ivalue = int(value)
+    if ivalue <= 0:
+        raise argparse.ArgumentTypeError("%s is an invalid positive int value" % value)
+    return ivalue
 
-def get_foundry(path):
+def get_foundry(path) -> Foundry:
     if path:
         return Foundry.Load(path)
     repo = FoundryRepo()
@@ -29,6 +34,12 @@ def backup(args):
         backup_world(args)
     elif args.backup_cmd == "full":
         backup_full(args)
+    elif args.backup_cmd == "cleanworld":
+        clean_world(args)
+    elif args.backup_cmd == "cleanfull":
+        clean_full(args)
+    elif args.backup_cmd == "clean":
+        clean(args)
 
 def backup_list(args):
     foundry = get_foundry(args.path)
@@ -50,12 +61,20 @@ def backup_full(args):
     instance = foundry.get_instance(args.instance)
     instance.full_backup()
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Manage foundryvtt service")
-    parser.add_argument("-p", "--path", metavar="path", default= "", nargs="?",
-                        help="The source path for FoundryVTT data")
-    subparsers = parser.add_subparsers(help='Command to execute', dest='cmd')
+def clean(args):
+    foundry = get_foundry(args.path)
+    foundry.clean_world_backup(datetime.timedelta(int(args.days)), int(args.count))
+    foundry.clean_full_backup(datetime.timedelta(int(args.days)), int(args.count))
 
+def clean_world(args):
+    foundry = get_foundry(args.path)
+    foundry.clean_world_backup(datetime.timedelta(int(args.days)), int(args.count))
+
+def clean_full(args):
+    foundry = get_foundry(args.path)
+    foundry.clean_full_backup(datetime.timedelta(int(args.days)), int(args.count))
+
+def setup_backup_args(subparsers):
     # Create the parser for the "backup" command
     parser_backup = subparsers.add_parser('backup', help='Backup help')
     backup_subparsers = parser_backup.add_subparsers(help='Backup command to execute', dest='backup_cmd')
@@ -66,12 +85,37 @@ if __name__ == "__main__":
     backup_full_parser = backup_subparsers.add_parser('full', help='Create full backup')
     backup_full_parser.add_argument("-i", "--instance", metavar="instance", default= "prod", nargs="?",
                         help="Which instance to backup")
-    
+    clean_world_parser = backup_subparsers.add_parser('cleanworld', help='Clean world backup')
+    clean_world_parser.add_argument("--count", metavar="count", default=0, type=check_positive, nargs="?",
+                        help="The number of old backup to keep")
+    clean_world_parser.add_argument("--days", metavar="days", default=30, type=check_positive, nargs="?",
+                        help="The number of days to keep backups")
+    clean_full_parser = backup_subparsers.add_parser('cleanfull', help='Clean full backup')
+    clean_full_parser.add_argument("--count", metavar="count", default=0, type=check_positive, nargs="?",
+                        help="The number of old backup to keep")
+    clean_full_parser.add_argument("--days", metavar="days", default=30, type=check_positive, nargs="?",
+                        help="The number of days to keep backups")
+    clean_parser = backup_subparsers.add_parser('clean', help='Clean all backups')
+    clean_parser.add_argument("--count", metavar="count", default=0, type=check_positive, nargs="?",
+                        help="The number of old backup to keep")
+    clean_parser.add_argument("--days", metavar="days", default=30, type=check_positive, nargs="?",
+                        help="The number of days to keep backups")
+
+def setup_cloud_args(subparsers):
     # Create the parser for the "cloud" command
     parser_cloud = subparsers.add_parser('cloud', help='CLoud help')
     cloud_subparsers = parser_cloud.add_subparsers(help='Cloud command to execute', dest='cloud_cmd')
-    cloud_subparsers.add_parser('sync', help='List all backup')
+    cloud_subparsers.add_parser('sync', help='Sync backup to the cloud')
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Manage foundryvtt service")
+    parser.add_argument("-p", "--path", metavar="path", default= "", nargs="?",
+                        help="The source path for FoundryVTT data")
+    subparsers = parser.add_subparsers(help='Command to execute', dest='cmd')
+
+    setup_backup_args(subparsers)
+    setup_cloud_args(subparsers)
 
     args = parser.parse_args()
     main(args)
+

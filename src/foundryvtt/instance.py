@@ -4,11 +4,15 @@ from docker.types import LogConfig
 import json
 import os
 from packaging import version
+from typing import List
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .foundry import Foundry
 
 class FoundryInstance(object):
 
     @classmethod
-    def Create(cls, foundry, name, version, port):
+    def Create(cls, foundry: 'Foundry', name: str, version: str, port: int):
         path = os.path.join(foundry.instances_path, name)
         data_path = os.path.join(path, "data")
         bin_path = os.path.join(path, "bin")
@@ -22,10 +26,10 @@ class FoundryInstance(object):
         return cls.Load(foundry, name)
 
     @classmethod
-    def Load(cls, foundry, name):
+    def Load(cls, foundry: 'Foundry', name: str):
         return FoundryInstance(foundry, name)
  
-    def __init__(self, foundry, name, version="", port=30000):
+    def __init__(self, foundry: 'Foundry', name: str, version: str="", port: int=30000):
         self._foundry = foundry
         self._name = name
         self._version = version

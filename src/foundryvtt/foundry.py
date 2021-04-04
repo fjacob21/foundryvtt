@@ -26,7 +26,7 @@ class FoundryRepo(object):
             return self._instances[0]
         return None
 
-    def add(self, instance):
+    def add(self, instance: FoundryInstance):
         if instance.path not in self._instances_paths:
             self._instances.append(instance)
             self.write()
@@ -55,7 +55,7 @@ class FoundryRepo(object):
 class Foundry(object):
 
     @classmethod
-    def Create(cls, path="/var/storage/foundryvtt", backup="backup", instances="instances", production_instance="prod", production_version="0.7.9", docker_image="foundryvtt"):
+    def Create(cls, path: str="/var/storage/foundryvtt", backup: str="backup", instances: str="instances", production_instance: str="prod", production_version: str="0.7.9", docker_image: str="foundryvtt"):
         #Create foundry repo
         if not os.path.exists(path):
             os.system(f"mkdir -p {path}")
@@ -75,10 +75,10 @@ class Foundry(object):
         return cls.Load(path)
     
     @classmethod
-    def Load(cls, path="/var/storage/foundryvtt"):
+    def Load(cls, path: str="/var/storage/foundryvtt"):
         return Foundry(path)
 
-    def __init__(self, path="/var/storage/foundryvtt", backup="backup", instances="instances", production_instance="prod", docker_image="foundryvtt"):
+    def __init__(self, path: str="/var/storage/foundryvtt", backup: str="backup", instances: str="instances", production_instance: str="prod", docker_image: str="foundryvtt"):
         self._path = path
         self._backup = backup
         self._instances = instances
@@ -122,13 +122,19 @@ class Foundry(object):
             instances.append(instance)
         return instances
     
-    def get_instance(self, name):
+    def get_instance(self, name: str):
         return FoundryInstance.Load(self, name)
 
-    def create_instance(self, name, version=""):
+    def create_instance(self, name: str, version: str=""):
         if not version:
             version = self.get_versions()[0]
         return FoundryInstance.Create(self, name, version, self.get_available_port())
+    
+    def clean_world_backup(self, keep_delta: datetime.timedelta=datetime.timedelta(30), old_count: int=0):
+        self.backup_manager.cleanup_world(keep_delta, old_count)
+    
+    def clean_full_backup(self, keep_delta: datetime.timedelta=datetime.timedelta(30), old_count: int=0):
+        self.backup_manager.cleanup_full(keep_delta, old_count)
     
     def get_versions(self):
         dclient = docker.client.from_env()
