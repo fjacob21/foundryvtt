@@ -22,6 +22,17 @@ def main(args):
         backup(args)
     elif args.cmd == "cloud":
         cloud(args)
+    elif args.cmd == "stats":
+        stats(args)
+
+def stats(args):
+    if args.stats_cmd == "connections":
+        foundry = get_foundry(args.path)
+        connections = foundry.get_connections()
+        i = 1
+        for c in connections:
+            print(f'\t{i}: {c["ip"]} -> City: {c["city"]} Region: {c["region"]} Country: {c["country"]} Org: {c["org"]} Postal: {c["postal"]}')
+            i += 1
 
 def cloud(args):
     if args.cloud_cmd == "sync":
@@ -103,9 +114,15 @@ def setup_backup_args(subparsers):
 
 def setup_cloud_args(subparsers):
     # Create the parser for the "cloud" command
-    parser_cloud = subparsers.add_parser('cloud', help='CLoud help')
+    parser_cloud = subparsers.add_parser('cloud', help='Cloud help')
     cloud_subparsers = parser_cloud.add_subparsers(help='Cloud command to execute', dest='cloud_cmd')
     cloud_subparsers.add_parser('sync', help='Sync backup to the cloud')
+
+def setup_stats_args(subparsers):
+    # Create the parser for the "stats" command
+    parser_stats = subparsers.add_parser('stats', help='Stats help')
+    stats_subparsers = parser_stats.add_subparsers(help='Stats command to execute', dest='stats_cmd')
+    stats_subparsers.add_parser('connections', help='Get connection to server')
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Manage foundryvtt service")
@@ -115,6 +132,7 @@ if __name__ == "__main__":
 
     setup_backup_args(subparsers)
     setup_cloud_args(subparsers)
+    setup_stats_args(subparsers)
 
     args = parser.parse_args()
     main(args)

@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="foundryvtt", # Replace with your own username
-    version="0.0.1",
+    version="0.1.0",
     author="Frederic Jacob",
     author_email="fjacob21@hotmail.com",
     description="A package to manage a FoundryVTT service and data",

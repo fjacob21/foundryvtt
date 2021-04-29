@@ -4,6 +4,8 @@ import json
 import os
 import psutil
 import re
+import requests
+import subprocess
 
 from packaging import version
 from .instance import FoundryInstance
@@ -169,6 +171,27 @@ class Foundry(object):
             port += 1
         return -1
    
+    def get_connections(self):
+        try:
+            connections = []
+            res = subprocess.getoutput("ss -o state established '( sport = :http or sport = :https )'")
+            ips = []
+            for l in res.split("\n")[1:]:
+                parts = re.findall(r"tcp\s+(\d+)\s+(\d+)\s+([^\s]+)\s+([^\s]+)\s+", l)
+                ip, _ = parts[0][3].split(":")
+                if ip not in ips:
+                    ips.append(ip)
+            i = 1
+            for ip in ips:
+                res = requests.get(f"https://ipinfo.io/{ip}")
+                info = res.json()
+                connections.append({"ip": ip, "city": info["city"], "region": info["region"], "country": info["country"], "org": info["org"], "postal": info["postal"]})
+                i += 1
+            return connections
+        except Exception as e:
+            print("Cannot get connections", e)
+            return []
+
     def load_settings(self):
         try:
             with open(self._settings_path, "rt") as f:
